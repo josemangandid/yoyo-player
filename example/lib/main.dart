@@ -38,7 +38,7 @@ class _MyAppState extends State<MyApp> {
                   // "https://player.vimeo.com/external/440218055.m3u8?s=7ec886b4db9c3a52e0e7f5f917ba7287685ef67f&oauth2_token_id=1360367101",
                   "https://sfux-ext.sfux.info/hls/chapter/105/1588724110/1588724110.m3u8",
               videoStyle: VideoStyle(),
-              videoLoadingStyle: VideoLoadingStyle(
+              videoLoadingStyle: VideoLoadingStyle(/*
                 loading: Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -52,7 +52,7 @@ class _MyAppState extends State<MyApp> {
                       Text("Loading video"),
                     ],
                   ),
-                ),
+                ),*/
               ),
               onFullScreen: (t) {
                 setState(() {

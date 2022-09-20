@@ -154,6 +154,12 @@ class _YoYoPlayerState extends State<YoYoPlayer>
   //Current ScreenSize
   Size get screenSize => MediaQuery.of(context).size;
 
+  VideoPlayerValue? _latestValue;
+
+  bool _wasLoading = false;
+
+  bool controlsNotVisible = true;
+
   //
   @override
   void initState() {
@@ -178,10 +184,8 @@ class _YoYoPlayerState extends State<YoYoPlayer>
         if (orientation == Orientation.landscape) {
           //Horizontal screen
           _fullscreen = true;
-          SystemChrome.setEnabledSystemUIOverlays([]);
         } else if (orientation == Orientation.portrait) {
           _fullscreen = false;
-          SystemChrome.setEnabledSystemUIOverlays(SystemUiOverlay.values);
         }
         if (_fullscreen != fullScreen) {
           setState(() {
@@ -213,6 +217,7 @@ class _YoYoPlayerState extends State<YoYoPlayer>
 
   @override
   Widget build(BuildContext context) {
+    _wasLoading = isLoading(_latestValue);
     final videoChildren = <Widget>[
       GestureDetector(
         onTap: () {
@@ -237,13 +242,10 @@ class _YoYoPlayerState extends State<YoYoPlayer>
     ];
     videoChildren.addAll(videoBuiltInChildren());
     return AspectRatio(
-      aspectRatio: fullScreen
-          ? calculateAspectRatio(context, screenSize)
-          : widget.aspectRatio,
-      child: controller!.value.isInitialized
-          ? Stack(children: videoChildren)
-          : widget.videoLoadingStyle!.loading,
-    );
+        aspectRatio: fullScreen
+            ? calculateAspectRatio(context, screenSize)
+            : widget.aspectRatio,
+        child: Stack(children: videoChildren));
   }
 
   /// Video Player ActionBar
@@ -274,7 +276,7 @@ class _YoYoPlayerState extends State<YoYoPlayer>
                   InkWell(
                     onTap: () => toggleFullScreen(),
                     child: Padding(
-                      padding: EdgeInsets.all(fullScreen? 20.0: 10.0),
+                      padding: EdgeInsets.all(fullScreen ? 20.0 : 10.0),
                       child: Icon(
                         fullScreen ? Icons.fullscreen_exit : Icons.fullscreen,
                         color: Colors.white,
@@ -331,20 +333,25 @@ class _YoYoPlayerState extends State<YoYoPlayer>
   List<Widget> videoBuiltInChildren() {
     return [
       shadow(),
-      actionBar(),
-      bottomBar(
-        controller: controller,
-        videoSeek: "$videoSeek",
-        videoDuration: "$videoDuration",
-        showMenu: showMenu,
-        isFullScreen: fullScreen,
-      ),
-      playPauseAndBackForward(
-          controller: controller,
-          forwardIcon: widget.videoStyle!.forward,
-          backwardIcon: widget.videoStyle!.backward,
-          play: () => togglePlay()),
-      m3u8list(),
+      _wasLoading ? widget.videoLoadingStyle!.loading : Container(),
+      _wasLoading ? Container() : actionBar(),
+      _wasLoading
+          ? Container()
+          : bottomBar(
+              controller: controller,
+              videoSeek: "$videoSeek",
+              videoDuration: "$videoDuration",
+              showMenu: showMenu,
+              isFullScreen: fullScreen,
+            ),
+      _wasLoading
+          ? Container()
+          : playPauseAndBackForward(
+              controller: controller,
+              forwardIcon: widget.videoStyle!.forward,
+              backwardIcon: widget.videoStyle!.backward,
+              play: () => togglePlay()),
+      _wasLoading ? Container() : m3u8list(),
     ];
   }
 
@@ -390,7 +397,8 @@ class _YoYoPlayerState extends State<YoYoPlayer>
                         rewind(controller!);
                       },
                       child: Container(
-                        margin: EdgeInsets.symmetric(horizontal: (fullScreen ? 40 : 20), vertical: 5),
+                        margin: EdgeInsets.symmetric(
+                            horizontal: (fullScreen ? 40 : 20), vertical: 5),
                         child: Icon(
                           Icons.replay_10,
                           color: Colors.white,
@@ -416,7 +424,8 @@ class _YoYoPlayerState extends State<YoYoPlayer>
                         fastForward(controller: controller);
                       },
                       child: Container(
-                        margin: EdgeInsets.symmetric(horizontal: (fullScreen ? 40 : 20), vertical: 5),
+                        margin: EdgeInsets.symmetric(
+                            horizontal: (fullScreen ? 40 : 20), vertical: 5),
                         child: Icon(
                           Icons.forward_10,
                           color: Colors.white,
@@ -595,6 +604,7 @@ class _YoYoPlayerState extends State<YoYoPlayer>
 
 // video Listener
   void listener() async {
+    _updateState();
     if (controller!.value.isInitialized && controller!.value.isPlaying) {
       if (!await Wakelock.enabled) {
         await Wakelock.enable();
@@ -777,10 +787,88 @@ class _YoYoPlayerState extends State<YoYoPlayer>
   }
 
   void toggleFullScreen() {
-    if (fullScreen) {
-      OrientationPlugin.forceOrientation(DeviceOrientation.portraitUp);
-    } else {
-      OrientationPlugin.forceOrientation(DeviceOrientation.landscapeRight);
+    if(!fullScreen) onEnterFullScreen();
+    else onExistFullScreen();
+  }
+
+  static const int _bufferingInterval = 20000;
+
+  bool isLoading(VideoPlayerValue? latestValue) {
+    if (latestValue != null) {
+      if (!latestValue.isPlaying && latestValue.duration == null) {
+        return true;
+      }
+
+      final Duration position = latestValue.position;
+
+      Duration? bufferedEndPosition;
+      if (latestValue.buffered.isNotEmpty == true) {
+        bufferedEndPosition = latestValue.buffered.last.end;
+      }
+
+      if (bufferedEndPosition != null) {
+        final difference = bufferedEndPosition - position;
+
+        if (latestValue.isPlaying &&
+            latestValue.isBuffering &&
+            difference.inMilliseconds < _bufferingInterval) {
+          return true;
+        }
+      }
     }
+    return false;
+  }
+
+  void _updateState() {
+    if (mounted) {
+      if (isVideoFinished(controller!.value) ||
+          _wasLoading ||
+          isLoading(controller!.value)) {
+        setState(() {
+          _latestValue = controller!.value;
+          //if (isVideoFinished(_latestValue) &&
+          //    controller!.value.isPlaying == false) {
+          //  changePlayerControlsNotVisible(false);
+          //}
+        });
+      }
+    }
+  }
+
+  bool isVideoFinished(VideoPlayerValue? videoPlayerValue) {
+    return videoPlayerValue?.position != null &&
+        videoPlayerValue?.duration != null &&
+        videoPlayerValue!.position.inMilliseconds != 0 &&
+        videoPlayerValue.duration.inMilliseconds != 0 &&
+        videoPlayerValue.position >= videoPlayerValue.duration;
+  }
+
+  void changePlayerControlsNotVisible(bool notVisible) {
+    setState(() {
+      controlsNotVisible = notVisible;
+    });
+  }
+
+  void onEnterFullScreen() {
+
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
+
+    SystemChrome.setPreferredOrientations(
+        [
+          DeviceOrientation.landscapeLeft,
+          DeviceOrientation.landscapeRight,
+        ]
+    );
+  }
+
+  void onExistFullScreen (){
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: SystemUiOverlay.values);
+
+    SystemChrome.setPreferredOrientations(
+        [
+          DeviceOrientation.portraitUp,
+          DeviceOrientation.portraitDown,
+        ]
+    );
   }
 }
