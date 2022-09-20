@@ -15,6 +15,7 @@ import 'package:yoyo_player/yoyo_player.dart';
 import 'model/audio.dart';
 import 'model/m3u8.dart';
 import 'model/m3u8s.dart';
+import 'responses/play_response.dart';
 import 'responses/regex_response.dart';
 import 'widget/top_chip.dart';
 
@@ -86,50 +87,73 @@ class _YoYoPlayerState extends State<YoYoPlayer>
     with SingleTickerProviderStateMixin {
   //video play type (hls,mp4,mkv,offline)
   String? playType;
+
   // Animation Controller
   late AnimationController controlBarAnimationController;
+
   // Video Top Bar Animation
   Animation<double>? controlTopBarAnimation;
+
   // Video Bottom Bar Animation
   Animation<double>? controlBottomBarAnimation;
+
   // Video Player Controller
   VideoPlayerController? controller;
+
   // Video init error default :false
   bool hasInitError = false;
+
   // Video Total Time duration
   String? videoDuration;
+
   // Video Seed to
   String? videoSeek;
+
   // Video duration 1
   Duration? duration;
+
   // video seek second by user
   double? videoSeekSecond;
+
   // video duration second
   double? videoDurationSecond;
+
   //m3u8 data video list for user choice
   List<M3U8pass> yoyo = [];
+
   // m3u8 audio list
   List<AUDIO> audioList = [];
+
   // m3u8 temp data
   String? m3u8Content;
+
   // subtitle temp data
   String? subtitleContent;
+
   // menu show m3u8 list
   bool m3u8show = false;
+
   // video full screen
   bool fullScreen = false;
+
   // menu show
   bool showMenu = false;
+
   // auto show subtitle
   bool showSubtitles = false;
+
   // video status
   bool? offline;
+
   // video auto quality
   String? m3u8quality = "Auto";
+
   // time for duration
   Timer? showTime;
+
   //Current ScreenSize
   Size get screenSize => MediaQuery.of(context).size;
+
   //
   @override
   void initState() {
@@ -237,7 +261,7 @@ class _YoYoPlayerState extends State<YoYoPlayer>
                   Container(
                     width: 5,
                   ),
-                  topChip(
+                  /*topChip(
                     Text(m3u8quality!, style: widget.videoStyle!.qualitystyle),
                     () {
                       // quality function
@@ -246,12 +270,16 @@ class _YoYoPlayerState extends State<YoYoPlayer>
                   ),
                   Container(
                     width: 5,
-                  ),
+                  ),*/
                   InkWell(
                     onTap: () => toggleFullScreen(),
-                    child: Icon(
-                      Icons.fullscreen,
-                      color: Colors.white,
+                    child: Padding(
+                      padding: EdgeInsets.all(fullScreen? 20.0: 10.0),
+                      child: Icon(
+                        fullScreen ? Icons.fullscreen_exit : Icons.fullscreen,
+                        color: Colors.white,
+                        size: fullScreen ? 35 : 25,
+                      ),
                     ),
                   ),
                   Container(
@@ -302,22 +330,105 @@ class _YoYoPlayerState extends State<YoYoPlayer>
 
   List<Widget> videoBuiltInChildren() {
     return [
+      shadow(),
       actionBar(),
-      btm(),
+      bottomBar(
+        controller: controller,
+        videoSeek: "$videoSeek",
+        videoDuration: "$videoDuration",
+        showMenu: showMenu,
+        isFullScreen: fullScreen,
+      ),
+      playPauseAndBackForward(
+          controller: controller,
+          forwardIcon: widget.videoStyle!.forward,
+          backwardIcon: widget.videoStyle!.backward,
+          play: () => togglePlay()),
       m3u8list(),
     ];
   }
 
-  Widget btm() {
+  Widget shadow() {
     return showMenu
-        ? bottomBar(
-            controller: controller,
-            videoSeek: "$videoSeek",
-            videoDuration: "$videoDuration",
-            forwardIcon: widget.videoStyle!.forward,
-            backwardIcon: widget.videoStyle!.backward,
-            showMenu: showMenu,
-            play: () => togglePlay())
+        ? GestureDetector(
+            onTap: () {
+              toggleControls();
+            },
+            onDoubleTap: () {
+              togglePlay();
+            },
+            child: Align(
+              alignment: Alignment.center,
+              child: Container(
+                  width: double.infinity,
+                  height: double.infinity,
+                  color: Colors.black54),
+            ),
+          )
+        : Container();
+  }
+
+  Widget playPauseAndBackForward({
+    VideoPlayerController? controller,
+    Widget? backwardIcon,
+    Widget? forwardIcon,
+    Function? play,
+  }) {
+    return showMenu
+        ? Align(
+            alignment: Alignment.center,
+            child: Padding(
+              padding: EdgeInsets.all(5.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.max,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: InkWell(
+                      onTap: () {
+                        rewind(controller!);
+                      },
+                      child: Container(
+                        margin: EdgeInsets.symmetric(horizontal: (fullScreen ? 40 : 20), vertical: 5),
+                        child: Icon(
+                          Icons.replay_10,
+                          color: Colors.white,
+                          size: fullScreen ? 50 : 30,
+                        ),
+                      ),
+                    ),
+                  ),
+                  InkWell(
+                    onTap: play as void Function()?,
+                    child: Icon(
+                      controller!.value.isPlaying
+                          ? Icons.pause
+                          : Icons.play_arrow,
+                      color: Colors.white,
+                      size: fullScreen ? 55 : 35,
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: InkWell(
+                      onTap: () {
+                        fastForward(controller: controller);
+                      },
+                      child: Container(
+                        margin: EdgeInsets.symmetric(horizontal: (fullScreen ? 40 : 20), vertical: 5),
+                        child: Icon(
+                          Icons.forward_10,
+                          color: Colors.white,
+                          size: fullScreen ? 50 : 30,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          )
         : Container();
   }
 
@@ -600,7 +711,8 @@ class _YoYoPlayerState extends State<YoYoPlayer>
       }
       return;
     }
-    ModalRoute.of(context)!.addLocalHistoryEntry(LocalHistoryEntry(onRemove: () {
+    ModalRoute.of(context)!
+        .addLocalHistoryEntry(LocalHistoryEntry(onRemove: () {
       if (fullScreen) toggleFullScreen();
     }));
   }
