@@ -31,6 +31,10 @@ class _MyAppState extends State<MyApp> {
         body: Column(
           children: [
             YoYoPlayer(
+              position: (int position){
+                print(position.toString());
+              },
+              startAt: Duration(seconds: 60),
               aspectRatio: 16 / 9,
               url:
                   // "https://flutter.github.io/assets-for-api-docs/assets/videos/bee.mp4",

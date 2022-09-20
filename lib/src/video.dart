@@ -56,6 +56,10 @@ class YoYoPlayer extends StatefulWidget {
   /// video Type
   final void Function(String videoType)? onPlayingVideo;
 
+  final Function(int position)? position;
+
+  final Duration? startAt;
+
   ///
   /// ```dart
   /// YoYoPlayer(
@@ -73,6 +77,8 @@ class YoYoPlayer extends StatefulWidget {
     Key? key,
     required this.url,
     required this.aspectRatio,
+    this.startAt,
+    this.position,
     this.videoStyle,
     this.videoLoadingStyle,
     this.onFullScreen,
@@ -141,6 +147,8 @@ class _YoYoPlayerState extends State<YoYoPlayer>
 
   // auto show subtitle
   bool showSubtitles = false;
+
+  final _position = 0;
 
   // video status
   bool? offline;
@@ -671,7 +679,7 @@ class _YoYoPlayerState extends State<YoYoPlayer>
     setState(() {});
   }
 
-  void videoInit(String? url) {
+  void videoInit(String? url) async  {
     if (offline == false) {
       print(
           "--- Player Status ---\nplay url : $url\noffline : $offline\n--- start playing –––");
@@ -680,25 +688,46 @@ class _YoYoPlayerState extends State<YoYoPlayer>
         // Play MP4
         controller =
             VideoPlayerController.network(url!, formatHint: VideoFormat.other)
-              ..initialize();
+              ..initialize()
+                  .then((value) {
+                startAt();
+                setState(() => hasInitError = false);
+              })
+                  .catchError((e) => setState(() => hasInitError = true));
       } else if (playType == "MKV") {
         controller =
             VideoPlayerController.network(url!, formatHint: VideoFormat.dash)
-              ..initialize();
+              ..initialize()
+                  .then((value) {
+                startAt();
+                setState(() => hasInitError = false);
+              })
+                  .catchError((e) => setState(() => hasInitError = true));
       } else if (playType == "HLS") {
         controller =
             VideoPlayerController.network(url!, formatHint: VideoFormat.hls)
               ..initialize()
-                  .then((_) => setState(() => hasInitError = false))
-                  .catchError((e) => setState(() => hasInitError = true));
+                  .then((value) {
+                startAt();
+                setState(() => hasInitError = false);
+              }).catchError((e) => setState(() => hasInitError = true));
       }
     } else {
       print(
           "--- Player Status ---\nplay url : $url\noffline : $offline\n--- start playing –––");
       controller = VideoPlayerController.file(File(url!))
         ..initialize()
-            .then((value) => setState(() => hasInitError = false))
+            .then((value) {
+              startAt();
+              setState(() => hasInitError = false);
+            })
             .catchError((e) => setState(() => hasInitError = true));
+    }
+  }
+
+  void startAt() async {
+    if(widget.startAt != null){
+      await controller!.seekTo(widget.startAt!);
     }
   }
 
@@ -753,7 +782,10 @@ class _YoYoPlayerState extends State<YoYoPlayer>
     controller = VideoPlayerController.file(
       file,
     )..initialize()
-        .then((_) => setState(() => hasInitError = false))
+        .then((value) {
+      startAt();
+      setState(() => hasInitError = false);
+    })
         .catchError((e) => setState(() => hasInitError = true));
     controller!.addListener(listener);
     controller!.play();
@@ -821,6 +853,9 @@ class _YoYoPlayerState extends State<YoYoPlayer>
 
   void _updateState() {
     if (mounted) {
+      if(controller!.value.position.inSeconds != _position && widget.position != null){
+        widget.position!(controller!.value.position.inSeconds);
+      }
       if (isVideoFinished(controller!.value) ||
           _wasLoading ||
           isLoading(controller!.value)) {
