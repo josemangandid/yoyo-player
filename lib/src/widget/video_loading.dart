@@ -13,7 +13,7 @@ class VideoLoading extends StatelessWidget {
           children: [
             CircularProgressIndicator(
               strokeWidth: 2,
-              valueColor: new AlwaysStoppedAnimation<Color>(Colors.amber),
+              valueColor: new AlwaysStoppedAnimation<Color>(Color(0xffff9d00)),
             ),
           ],
         ),

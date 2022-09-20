@@ -168,6 +168,8 @@ class _YoYoPlayerState extends State<YoYoPlayer>
 
   bool controlsNotVisible = true;
 
+  bool _fullscreen = false;
+
   //
   @override
   void initState() {
@@ -186,15 +188,7 @@ class _YoYoPlayerState extends State<YoYoPlayer>
 
     widgetsBinding.addPostFrameCallback((callback) {
       widgetsBinding.addPersistentFrameCallback((callback) {
-        if (context == null) return;
-        var orientation = MediaQuery.of(context).orientation;
-        bool? _fullscreen;
-        if (orientation == Orientation.landscape) {
-          //Horizontal screen
-          _fullscreen = true;
-        } else if (orientation == Orientation.portrait) {
-          _fullscreen = false;
-        }
+        if (!mounted) return;
         if (_fullscreen != fullScreen) {
           setState(() {
             fullScreen = !fullScreen;
@@ -679,7 +673,7 @@ class _YoYoPlayerState extends State<YoYoPlayer>
     setState(() {});
   }
 
-  void videoInit(String? url) async  {
+  void videoInit(String? url) async {
     if (offline == false) {
       print(
           "--- Player Status ---\nplay url : $url\noffline : $offline\n--- start playing –––");
@@ -688,26 +682,21 @@ class _YoYoPlayerState extends State<YoYoPlayer>
         // Play MP4
         controller =
             VideoPlayerController.network(url!, formatHint: VideoFormat.other)
-              ..initialize()
-                  .then((value) {
+              ..initialize().then((value) {
                 startAt();
                 setState(() => hasInitError = false);
-              })
-                  .catchError((e) => setState(() => hasInitError = true));
+              }).catchError((e) => setState(() => hasInitError = true));
       } else if (playType == "MKV") {
         controller =
             VideoPlayerController.network(url!, formatHint: VideoFormat.dash)
-              ..initialize()
-                  .then((value) {
+              ..initialize().then((value) {
                 startAt();
                 setState(() => hasInitError = false);
-              })
-                  .catchError((e) => setState(() => hasInitError = true));
+              }).catchError((e) => setState(() => hasInitError = true));
       } else if (playType == "HLS") {
         controller =
             VideoPlayerController.network(url!, formatHint: VideoFormat.hls)
-              ..initialize()
-                  .then((value) {
+              ..initialize().then((value) {
                 startAt();
                 setState(() => hasInitError = false);
               }).catchError((e) => setState(() => hasInitError = true));
@@ -716,17 +705,15 @@ class _YoYoPlayerState extends State<YoYoPlayer>
       print(
           "--- Player Status ---\nplay url : $url\noffline : $offline\n--- start playing –––");
       controller = VideoPlayerController.file(File(url!))
-        ..initialize()
-            .then((value) {
-              startAt();
-              setState(() => hasInitError = false);
-            })
-            .catchError((e) => setState(() => hasInitError = true));
+        ..initialize().then((value) {
+          startAt();
+          setState(() => hasInitError = false);
+        }).catchError((e) => setState(() => hasInitError = true));
     }
   }
 
   void startAt() async {
-    if(widget.startAt != null){
+    if (widget.startAt != null) {
       await controller!.seekTo(widget.startAt!);
     }
   }
@@ -781,12 +768,10 @@ class _YoYoPlayerState extends State<YoYoPlayer>
   void localM3U8play(File file) {
     controller = VideoPlayerController.file(
       file,
-    )..initialize()
-        .then((value) {
-      startAt();
-      setState(() => hasInitError = false);
-    })
-        .catchError((e) => setState(() => hasInitError = true));
+    )..initialize().then((value) {
+        startAt();
+        setState(() => hasInitError = false);
+      }).catchError((e) => setState(() => hasInitError = true));
     controller!.addListener(listener);
     controller!.play();
   }
@@ -819,8 +804,14 @@ class _YoYoPlayerState extends State<YoYoPlayer>
   }
 
   void toggleFullScreen() {
-    if(!fullScreen) onEnterFullScreen();
-    else onExistFullScreen();
+    if (fullScreen) {
+      OrientationPlugin.forceOrientation(DeviceOrientation.portraitUp);
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: SystemUiOverlay.values);
+    } else {
+      OrientationPlugin.forceOrientation(DeviceOrientation.landscapeRight);
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
+    }
+    _fullscreen = !_fullscreen;
   }
 
   static const int _bufferingInterval = 20000;
@@ -853,7 +844,8 @@ class _YoYoPlayerState extends State<YoYoPlayer>
 
   void _updateState() {
     if (mounted) {
-      if(controller!.value.position.inSeconds != _position && widget.position != null){
+      if (controller!.value.position.inSeconds != _position &&
+          widget.position != null) {
         widget.position!(controller!.value.position.inSeconds);
       }
       if (isVideoFinished(controller!.value) ||
@@ -882,28 +874,5 @@ class _YoYoPlayerState extends State<YoYoPlayer>
     setState(() {
       controlsNotVisible = notVisible;
     });
-  }
-
-  void onEnterFullScreen() {
-
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
-
-    SystemChrome.setPreferredOrientations(
-        [
-          DeviceOrientation.landscapeLeft,
-          DeviceOrientation.landscapeRight,
-        ]
-    );
-  }
-
-  void onExistFullScreen (){
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: SystemUiOverlay.values);
-
-    SystemChrome.setPreferredOrientations(
-        [
-          DeviceOrientation.portraitUp,
-          DeviceOrientation.portraitDown,
-        ]
-    );
   }
 }
