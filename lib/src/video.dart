@@ -164,7 +164,7 @@ class _YoYoPlayerState extends State<YoYoPlayer>
 
   VideoPlayerValue? _latestValue;
 
-  bool _wasLoading = false;
+  bool _wasLoading = true;
 
   bool controlsNotVisible = true;
 
