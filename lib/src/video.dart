@@ -223,7 +223,7 @@ class _YoYoPlayerState extends State<YoYoPlayer>
 
   @override
   Widget build(BuildContext context) {
-    _wasLoading = isLoading(_latestValue);
+    _wasLoading = (isLoading(_latestValue) || !controller!.value.isInitialized);
     final videoChildren = <Widget>[
       GestureDetector(
         onTap: () {
