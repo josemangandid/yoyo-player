@@ -170,6 +170,10 @@ class _YoYoPlayerState extends State<YoYoPlayer>
 
   bool _fullscreen = false;
 
+  Timer? _hideTimer;
+  Timer? _initTimer;
+  bool _displayTapped = false;
+
   //
   @override
   void initState() {
@@ -332,6 +336,20 @@ class _YoYoPlayerState extends State<YoYoPlayer>
         : Container();
   }
 
+  void _startHideTimer() {
+    _hideTimer = Timer(const Duration(milliseconds: 3000), () {
+      changePlayerControlsNotVisible(true);
+    });
+  }
+
+  void cancelAndRestartTimer() {
+    _hideTimer?.cancel();
+    _startHideTimer();
+
+    changePlayerControlsNotVisible(false);
+    _displayTapped = true;
+  }
+
   List<Widget> videoBuiltInChildren() {
     return [
       shadow(),
@@ -345,6 +363,16 @@ class _YoYoPlayerState extends State<YoYoPlayer>
               videoDuration: "$videoDuration",
               showMenu: showMenu,
               isFullScreen: fullScreen,
+        onDragStart: () {
+          _hideTimer?.cancel();
+        },
+        onDragEnd: () {
+          _startHideTimer();
+        },
+        onTapDown: () {
+          cancelAndRestartTimer();
+        },
+
             ),
       _wasLoading
           ? Container()

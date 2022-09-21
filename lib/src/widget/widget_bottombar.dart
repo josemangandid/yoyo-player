@@ -1,5 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
+import 'package:yoyo_player/src/widget/progress_bar.dart';
+import 'package:yoyo_player/src/widget/progress_colors.dart';
+
+Color progressBarPlayedColor = Colors.white;
+Color progressBarHandleColor = Colors.white;
+Color progressBarBufferedColor = Colors.white70;
+Color progressBarBackgroundColor = Colors.white60;
 
 Widget bottomBar({
   VideoPlayerController? controller,
@@ -7,6 +14,10 @@ Widget bottomBar({
   String? videoDuration,
   required bool isFullScreen,
   required bool showMenu,
+  Function()? onDragStart,
+  Function()? onDragEnd,
+  Function()? onDragUpdate,
+  Function()? onTapDown,
 }) {
   return showMenu
       ? Align(
@@ -19,26 +30,28 @@ Widget bottomBar({
                 padding: const EdgeInsets.symmetric(horizontal: 15.0),
                 child: Text(
                   videoSeek! + " / " + videoDuration!,
-                  style: TextStyle(fontSize: isFullScreen ? 16 : 12, color: Colors.white),
+                  style: TextStyle(
+                      fontSize: isFullScreen ? 16 : 12, color: Colors.white),
                 ),
               ),
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: 10.0, vertical: 5.0),
-                child: VideoProgressIndicator(
-                  controller!,
-                  allowScrubbing: true,
-                  colors: VideoProgressColors(
-                      playedColor: Colors.black45,
-                      bufferedColor: Colors.black12,
-                      backgroundColor: Colors.white),
-                  padding: EdgeInsets.only(left: 5.0, right: 5),
+                padding: EdgeInsets.symmetric(horizontal: 15.0),
+                child: Container(
+                  height: 30,
+                  child: ProgressBar(
+                    controller,
+                    onDragStart: onDragStart,
+                    onDragEnd: onDragEnd,
+                    onTapDown: onTapDown,
+                    colors: ProgressColors(
+                      playedColor: progressBarPlayedColor,
+                      handleColor: progressBarHandleColor,
+                      bufferedColor: progressBarBufferedColor,
+                      backgroundColor: progressBarBackgroundColor,
+                    ),
+                  ),
                 ),
               ),
-              isFullScreen
-                  ? SizedBox(
-                      height: 20.0,
-                    )
-                  : SizedBox(),
             ],
           ),
         )
