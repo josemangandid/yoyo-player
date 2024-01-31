@@ -58,6 +58,8 @@ class YoYoPlayer extends StatefulWidget {
 
   final Function(int position)? position;
 
+  final Function()? onToNextVideo;
+
   final Duration? startAt;
 
   ///
@@ -83,6 +85,7 @@ class YoYoPlayer extends StatefulWidget {
     this.videoLoadingStyle,
     this.onFullScreen,
     this.onPlayingVideo,
+    this.onToNextVideo,
   }) : super(key: key);
 
   @override
@@ -363,6 +366,7 @@ class _YoYoPlayerState extends State<YoYoPlayer>
               videoDuration: "$videoDuration",
               showMenu: showMenu,
               isFullScreen: fullScreen,
+        onToNextVideo: widget.onToNextVideo,
         onDragStart: () {
           _hideTimer?.cancel();
         },

@@ -10,6 +10,7 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   bool fullscreen = false;
+  bool existVideo = false;
 
   @override
   Widget build(BuildContext context) {
@@ -36,6 +37,7 @@ class _MyAppState extends State<MyApp> {
               },
               startAt: Duration(seconds: 60),
               aspectRatio: 16 / 9,
+              onToNextVideo: existVideo ? () {} : null,
               url:
                   // "https://flutter.github.io/assets-for-api-docs/assets/videos/bee.mp4",
                   // "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8",

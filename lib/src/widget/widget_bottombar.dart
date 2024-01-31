@@ -18,6 +18,7 @@ Widget bottomBar({
   Function()? onDragEnd,
   Function()? onDragUpdate,
   Function()? onTapDown,
+  Function()? onToNextVideo,
 }) {
   return showMenu
       ? Align(
@@ -26,13 +27,30 @@ Widget bottomBar({
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 15.0),
-                child: Text(
-                  videoSeek! + " / " + videoDuration!,
-                  style: TextStyle(
-                      fontSize: isFullScreen ? 16 : 12, color: Colors.white),
-                ),
+              Row(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 15.0),
+                    child: Text(
+                      videoSeek! + " / " + videoDuration!,
+                      style: TextStyle(
+                          fontSize: isFullScreen ? 16 : 12, color: Colors.white),
+                    ),
+                  ),
+                  Spacer(),
+                  if(onToNextVideo != null)Padding(
+                    padding: const EdgeInsets.only(right: 15.0),
+                    child: ElevatedButton(
+                      style: ButtonStyle(backgroundColor: MaterialStateProperty.all(Color(0xff303030))
+                      ),
+                      onPressed: (){},
+                      child: Row(mainAxisSize: MainAxisSize.min,
+                      children: [Text("Siguiente", style: TextStyle(
+                          fontSize: isFullScreen ? 16 : 12, color: Colors.white)), Icon(Icons.arrow_forward_ios,
+                        size: isFullScreen ? 20 : 16,
+                      )],), ),
+                  )
+                ],
               ),
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 15.0),
