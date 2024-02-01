@@ -43,7 +43,7 @@ Widget bottomBar({
                     child: ElevatedButton(
                       style: ButtonStyle(backgroundColor: MaterialStateProperty.all(Color(0xff303030))
                       ),
-                      onPressed: (){},
+                      onPressed: onToNextVideo,
                       child: Row(mainAxisSize: MainAxisSize.min,
                       children: [Text("Siguiente", style: TextStyle(
                           fontSize: isFullScreen ? 16 : 12, color: Colors.white)), Icon(Icons.arrow_forward_ios,
